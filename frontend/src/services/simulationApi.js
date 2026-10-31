@@ -57,3 +57,4 @@ export const listFiles = (path) => request('get', '/simulation/files', { params:
 export const readFileContent = (path) => request('get', '/simulation/file-content', { params: { path } });
 export const getDirectory = () => request('get', '/simulation/directory');
 export const getAdminPanel = () => request('get', '/simulation/admin');
+export const sendChat = (message) => request('post', '/simulation/chat', { data: { message } });

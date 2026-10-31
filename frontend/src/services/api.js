@@ -9,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('honeyswarm_token');
@@ -21,6 +20,8 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export default api;
 export const fetchSessions = () => api.get('/intelligence/sessions').then(res => res.data);
 export const fetchSessionIntelligence = (sessionId) => api.get(`/intelligence/sessions/${sessionId}`).then(res => res.data);
+export const fetchProviderStatus = () => api.get('/ai/status').then(res => res.data);
+
+export default api;

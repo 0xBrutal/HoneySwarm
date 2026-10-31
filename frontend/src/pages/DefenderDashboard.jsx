@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { fetchSessions } from '../services/api';
+import { fetchSessions, fetchProviderStatus } from '../services/api';
 
 const DefenderDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
+  const [aiStatus, setAiStatus] = useState(null);
 
   const handleLogout = () => { logout(); navigate('/defender/login'); };
 
@@ -16,9 +17,13 @@ const DefenderDashboard = () => {
         const data = await fetchSessions();
         setSessions(data.sessions || []);
       } catch (e) { console.error(e); }
+      try {
+        const status = await fetchProviderStatus();
+        setAiStatus(status);
+      } catch (e) { console.error(e); }
     };
     load();
-    const interval = setInterval(load, 3000); // Poll every 3s to see score updates live
+    const interval = setInterval(load, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -30,6 +35,40 @@ const DefenderDashboard = () => {
           <span className="text-sm text-gray-400">Logged in as: {user?.email}</span>
           <button onClick={handleLogout} className="px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded text-sm">Logout</button>
         </div>
+      </div>
+
+      {/* AI Provider Status */}
+      <div className="mb-8 bg-gray-800 border border-gray-700 rounded-lg p-4">
+        <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wide mb-3">AI Provider Status</h2>
+        {!aiStatus ? (
+          <p className="text-gray-500 text-sm">Loading provider status...</p>
+        ) : (
+          <div className="flex flex-wrap gap-6 text-sm">
+            <div>
+              <span className="text-gray-400">Active: </span>
+              <span className={`font-bold ${
+                aiStatus.activeProvider === 'groq' ? 'text-green-400' :
+                aiStatus.activeProvider === 'lmstudio' ? 'text-blue-400' : 'text-amber-400'
+              }`}>{aiStatus.activeProvider.toUpperCase()}</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Groq: </span>
+              <span className={aiStatus.groq.configured ? 'text-green-400' : 'text-red-400'}>
+                {aiStatus.groq.configured ? `configured (${aiStatus.groq.model})` : 'not configured'}
+              </span>
+              {aiStatus.groq.lastStatus === 'error' && <span className="text-red-400 ml-2">last: {aiStatus.groq.lastError?.slice(0, 60)}</span>}
+            </div>
+            <div>
+              <span className="text-gray-400">LM Studio: </span>
+              <span className="text-gray-300">{aiStatus.lmstudio.baseUrl}</span>
+              {aiStatus.lmstudio.lastStatus === 'error' && <span className="text-red-400 ml-2">unreachable</span>}
+            </div>
+            <div>
+              <span className="text-gray-400">Deterministic fallback: </span>
+              <span className="text-green-400">available</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <h2 className="text-xl mb-4 text-gray-200">Live Session Intelligence</h2>
@@ -53,9 +92,10 @@ const DefenderDashboard = () => {
               <tr key={s.id} className="hover:bg-gray-700">
                 <td className="px-4 py-3 font-mono text-xs">{s.id.slice(0, 8)}...</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${s.routing_stage === 'deception' ? 'bg-red-900 text-red-200' :
-                      s.routing_stage === 'probe' ? 'bg-amber-900 text-amber-200' : 'bg-blue-900 text-blue-200'
-                    }`}>{s.routing_stage}</span>
+                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                    s.routing_stage === 'deception' ? 'bg-red-900 text-red-200' :
+                    s.routing_stage === 'probe' ? 'bg-amber-900 text-amber-200' : 'bg-blue-900 text-blue-200'
+                  }`}>{s.routing_stage}</span>
                 </td>
                 <td className="px-4 py-3 font-mono font-bold">{s.threat_score}</td>
                 <td className="px-4 py-3">{s.status}</td>

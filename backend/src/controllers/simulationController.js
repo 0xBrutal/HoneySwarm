@@ -3,6 +3,7 @@ const { createInitialState } = require('../simulation-engine/worldState');
 const { executeCommand } = require('../simulation-engine/terminalEngine');
 const fsUtils = require('../simulation-engine/filesystem');
 const { recordEvent } = require('../event-recorder/recorder');
+const aiEngine = require('../ai-response-engine/aiEngine');
 
 function publicState(state) {
   return { currentUser: state.currentUser, privilege: state.privilege, cwd: state.cwd };
@@ -59,19 +60,78 @@ function getSessionInfo(req, res) {
   });
 }
 
-function terminal(req, res) {
-  const { session, state } = req.simContext;
-  const db = req.app.get('db');
-  const { command } = req.body || {};
-  if (typeof command !== 'string') return res.status(400).json({ message: 'command (string) required' });
+async function terminal(req, res) {
+  try {
+    const { session, state } = req.simContext;
+    const db = req.app.get('db');
+    const { command } = req.body || {};
+    if (typeof command !== 'string') return res.status(400).json({ message: 'command (string) required' });
 
-  const result = executeCommand(state, command);
-  persistState(db, session.id, state);
-  for (const ev of result.events) {
-    recordEvent(db, session.id, { ...ev, endpoint: '/api/simulation/terminal' });
+    const result = executeCommand(state, command);
+    let aiInfo = null;
+
+    // Unknown commands are handed to the AI engine (with deterministic fallback inside).
+    if (result.needsAI) {
+      const aiResult = await aiEngine.handleTerminalAction(state, command);
+      result.output = aiResult.response;
+      aiInfo = { provider: aiResult.provider, confidence: aiResult.confidence };
+      aiEngine.applyStateChanges(state, aiResult.stateChanges);
+      result.events.push({
+        eventType: aiResult.eventType,
+        action: command,
+        description: `AI-assisted terminal response (${aiResult.provider}). ${aiResult.reasoning}`.trim(),
+        severity: 'info',
+        source: `ai-response-engine:${aiResult.provider}`,
+        metadata: { provider: aiResult.provider, confidence: aiResult.confidence },
+      });
+    }
+
+    persistState(db, session.id, state);
+    for (const ev of result.events) {
+      recordEvent(db, session.id, { ...ev, endpoint: '/api/simulation/terminal' });
+    }
+
+    res.json({ output: result.output, events: result.events.map((e) => e.eventType), state: publicState(state), ai: aiInfo });
+  } catch (err) {
+    console.error('[Simulation] Terminal error:', err.message);
+    res.status(500).json({ message: 'Terminal processing failed' });
   }
+}
 
-  res.json({ output: result.output, events: result.events.map((e) => e.eventType), state: publicState(state) });
+async function chat(req, res) {
+  try {
+    const { session, state } = req.simContext;
+    const db = req.app.get('db');
+    const { message } = req.body || {};
+    if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ message: 'message (string) required' });
+
+    if (!state.chatHistory) state.chatHistory = [];
+
+    const aiResult = await aiEngine.handleChat(state, message.trim());
+
+    state.chatHistory.push({ role: 'user', content: message.trim().slice(0, 500) });
+    state.chatHistory.push({ role: 'assistant', content: aiResult.response.slice(0, 500) });
+    if (state.chatHistory.length > 20) state.chatHistory = state.chatHistory.slice(-20);
+    aiEngine.applyStateChanges(state, aiResult.stateChanges);
+
+    persistState(db, session.id, state);
+
+    const isSE = aiResult.eventType === 'social_engineering_indicator';
+    recordEvent(db, session.id, {
+      eventType: isSE ? 'social_engineering_indicator' : 'chat_interaction',
+      action: `chat: ${message.trim().slice(0, 120)}`,
+      description: `HR chat via ${aiResult.provider}: "${message.trim().slice(0, 200)}"${isSE ? ' [AI flagged possible social engineering — hypothesis only]' : ''}`,
+      severity: 'info', // AI flags never raise deterministic threat score directly
+      source: `ai-response-engine:${aiResult.provider}`,
+      endpoint: '/api/simulation/chat',
+      metadata: { provider: aiResult.provider, confidence: aiResult.confidence },
+    });
+
+    res.json({ reply: aiResult.response, provider: aiResult.provider });
+  } catch (err) {
+    console.error('[Simulation] Chat error:', err.message);
+    res.status(500).json({ message: 'Chat processing failed' });
+  }
 }
 
 function listFiles(req, res) {
@@ -151,4 +211,4 @@ function adminPanel(req, res) {
   });
 }
 
-module.exports = { createSession, getSessionInfo, terminal, listFiles, fileContent, directory, adminPanel };
+module.exports = { createSession, getSessionInfo, terminal, chat, listFiles, fileContent, directory, adminPanel };
