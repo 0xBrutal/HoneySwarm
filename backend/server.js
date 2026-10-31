@@ -6,7 +6,7 @@ const cors = require('cors');
 const initDB = require('./src/database/init');
 const authRoutes = require('./src/routes/authRoutes');
 const simulationRoutes = require('./src/routes/simulationRoutes');
-
+const intelligenceRoutes = require('./src/routes/intelligenceRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +40,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/simulation', simulationRoutes);
+app.use('/api/intelligence', intelligenceRoutes);
+
 
 // Socket.IO connection
 io.on('connection', (socket) => {
