@@ -29,4 +29,24 @@ export const resumeScenario = () => api.post('/defender/scenario/resume').then(r
 export const stopScenario = () => api.post('/defender/scenario/stop').then(res => res.data);
 export const getScenarioStatus = () => api.get('/defender/scenario/status').then(res => res.data);
 
+export const downloadFile = async (url, filename) => {
+  const response = await api.get(url, { responseType: 'blob' });
+  const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+};
+
+// Management & Report APIs
+export const resetSession = (sessionId) => api.post(`/defender/session/${sessionId}/reset`).then(res => res.data);
+export const resetAllSessions = () => api.post('/defender/sessions/reset-all').then(res => res.data);
+export const emergencyStop = () => api.post('/defender/emergency-stop').then(res => res.data);
+
+export const downloadJSONReport = (sessionId) => downloadFile(`/defender/report/${sessionId}/json`, `report_${sessionId.slice(0, 8)}.json`);
+export const downloadPDFReport = (sessionId) => downloadFile(`/defender/report/${sessionId}/pdf`, `report_${sessionId.slice(0, 8)}.pdf`);
+
 export default api;

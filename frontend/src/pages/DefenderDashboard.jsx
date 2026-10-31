@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { fetchSessions, fetchSessionIntelligence, fetchProviderStatus } from '../services/api';
+import { fetchSessions, fetchSessionIntelligence, fetchProviderStatus, resetSession, resetAllSessions, emergencyStop, downloadJSONReport, downloadPDFReport } from '../services/api';
+import { Activity, AlertOctagon, Users, Cpu, Download, RefreshCw, Power } from 'lucide-react'; 
 import { useSocket } from '../hooks/useSocket';
 import EventTimeline from '../components/soc/EventTimeline';
 import MitrePanel from '../components/soc/MitrePanel';
 import ScenarioPanel from '../components/soc/ScenarioPanel';
-import { Activity, AlertOctagon, Users, Cpu } from 'lucide-react';
 
 const DefenderDashboard = () => {
   const { user, logout } = useAuth();
@@ -81,6 +81,42 @@ const DefenderDashboard = () => {
     loadSessionDetails(session.id);
   };
 
+  const [isManaging, setIsManaging] = useState(false);
+
+  const handleResetSession = async () => {
+    if (!selectedSession || !window.confirm('Reset this session? This deletes all events and state.')) return;
+    setIsManaging(true);
+    try {
+      await resetSession(selectedSession.id);
+      setSelectedSession(null);
+      setSessionDetails(null);
+      await loadSessions();
+    } catch (e) { console.error(e); }
+    setIsManaging(false);
+  };
+
+  const handleResetAll = async () => {
+    if (!window.confirm('WARNING: This will delete ALL sessions, events, and reset the scenario. Continue?')) return;
+    setIsManaging(true);
+    try {
+      await resetAllSessions();
+      setSelectedSession(null);
+      setSessionDetails(null);
+      await loadSessions();
+    } catch (e) { console.error(e); }
+    setIsManaging(false);
+  };
+
+  const handleEmergencyStop = async () => {
+    if (!window.confirm('EMERGENCY STOP: Halt scenario and close all active sessions?')) return;
+    setIsManaging(true);
+    try {
+      await emergencyStop();
+      await loadSessions();
+    } catch (e) { console.error(e); }
+    setIsManaging(false);
+  };
+
   // Calculate overview stats
   const activeSessions = sessions.filter(s => s.status === 'active').length;
   const criticalEvents = sessionDetails?.events.filter(e => e.severity === 'high' || e.severity === 'critical').length || 0;
@@ -93,7 +129,13 @@ const DefenderDashboard = () => {
           <Activity className="text-cyan-400" size={24} />
           <h1 className="text-xl font-bold text-white tracking-wide">HoneySwarm SOC</h1>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          <button onClick={handleEmergencyStop} disabled={isManaging} className="px-3 py-1.5 bg-red-900/80 hover:bg-red-800 text-red-100 rounded text-xs font-bold border border-red-700 flex items-center gap-1 disabled:opacity-50">
+            <Power size={12} /> EMERGENCY STOP
+          </button>
+          <button onClick={handleResetAll} disabled={isManaging} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs font-medium flex items-center gap-1 disabled:opacity-50">
+            <RefreshCw size={12} /> Reset All Demo Data
+          </button>
           <div className="flex items-center gap-2 text-sm">
             <Cpu size={14} className={aiStatus?.activeProvider === 'groq' ? 'text-green-400' : 'text-amber-400'} />
             <span>AI: <span className="font-mono font-bold text-white">{(aiStatus?.activeProvider || 'loading').toUpperCase()}</span></span>
@@ -148,29 +190,44 @@ const DefenderDashboard = () => {
           ) : (
             <div className="space-y-6">
               {/* Session Header */}
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Session {selectedSession.id.slice(0, 8)}</h2>
-                  <p className="text-sm text-gray-400 mt-1">Started: {new Date(selectedSession.started_at + 'Z').toLocaleString()}</p>
+                {/* Session Header */}
+                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Session {selectedSession.id.slice(0, 8)}</h2>
+                    <p className="text-sm text-gray-400 mt-1">Started: {new Date(selectedSession.started_at + 'Z').toLocaleString()}</p>
+                  </div>
+                  <div className="flex gap-8 text-center items-center">
+                    <div>
+                      <p className="text-3xl font-bold text-white">{selectedSession.threat_score}</p>
+                      <p className="text-xs text-gray-400 uppercase">Threat Score</p>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-cyan-400">{criticalEvents}</p>
+                      <p className="text-xs text-gray-400 uppercase">Critical Events</p>
+                    </div>
+                    <div>
+                      <p className={`text-lg font-bold uppercase px-3 py-1 rounded ${selectedSession.routing_stage === 'deception' ? 'bg-red-900 text-red-200' :
+                          selectedSession.routing_stage === 'probe' ? 'bg-amber-900 text-amber-200' : 'bg-blue-900 text-blue-200'
+                        }`}>{selectedSession.routing_stage}</p>
+                      <p className="text-xs text-gray-400 uppercase mt-1">Stage</p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-2 border-l border-gray-700 pl-6 ml-2">
+                      <div className="flex gap-2">
+                        <button onClick={() => downloadPDFReport(selectedSession.id)} className="px-3 py-1.5 bg-cyan-800 hover:bg-cyan-700 text-cyan-100 rounded text-xs flex items-center gap-1">
+                          <Download size={12} /> PDF Report
+                        </button>
+                        <button onClick={() => downloadJSONReport(selectedSession.id)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs flex items-center gap-1">
+                          <Download size={12} /> JSON
+                        </button>
+                      </div>
+                      <button onClick={handleResetSession} className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-200 rounded text-xs border border-red-800">
+                        Reset Session
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-8 text-center">
-                  <div>
-                    <p className="text-3xl font-bold text-white">{selectedSession.threat_score}</p>
-                    <p className="text-xs text-gray-400 uppercase">Threat Score</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-cyan-400">{criticalEvents}</p>
-                    <p className="text-xs text-gray-400 uppercase">Critical Events</p>
-                  </div>
-                  <div>
-                    <p className={`text-lg font-bold uppercase px-3 py-1 rounded ${
-                      selectedSession.routing_stage === 'deception' ? 'bg-red-900 text-red-200' : 
-                      selectedSession.routing_stage === 'probe' ? 'bg-amber-900 text-amber-200' : 'bg-blue-900 text-blue-200'
-                    }`}>{selectedSession.routing_stage}</p>
-                    <p className="text-xs text-gray-400 uppercase mt-1">Stage</p>
-                  </div>
-                </div>
-              </div>
 
               {/* Intelligence Panels */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
