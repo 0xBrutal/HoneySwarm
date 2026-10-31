@@ -5,7 +5,74 @@
 
 <p align="center">
   <strong>Observe · Deceive · Analyze · Learn</strong>
-</p>
+</p>a# 🍯 HoneySwarm
+### *Let Them In. Learn Everything.*
+
+**HoneySwarm** is an AI-powered adaptive cyber deception platform. Instead of simply blocking attackers or relying on static, easily-fingerprinted honeypots, HoneySwarm safely engages them in a highly realistic, isolated corporate environment. It studies their behavior, maps their actions to the **MITRE ATT&CK framework** in real-time, and generates actionable threat intelligence for security teams.
+
+> 🏆 **Hackathon Track:** Open Innovation — AI-Powered Cybersecurity & Adaptive Deception
+
+---
+
+## 🛑 The Problem
+Traditional cybersecurity focuses on building higher walls. But when an attacker inevitably bypasses the perimeter, defenders learn nothing about their motives, tools, or next moves. Conventional honeypots attempt to solve this, but they are **static**. Attackers can fingerprint them in seconds, rendering them useless. If you just block an attacker, you lose the opportunity to study them.
+
+## 💡 The Solution
+HoneySwarm doesn't just block; it **engages**. It dynamically generates a fictional corporate environment ("Vertex Dynamics") that adapts to the attacker's actions. 
+
+### The Three Pillars of HoneySwarm:
+1. **The BAIT:** A fully simulated, isolated Linux environment, corporate intranet, cloud drive, and HR chatbot. It contains planted "canary" credentials and synthetic sensitive data.
+2. **The BRAIN:** A hybrid AI engine. It uses deterministic rules for standard commands (ensuring zero latency and perfect consistency) and routes unknown, complex commands to an LLM (Groq) to dynamically hallucinate plausible outputs, keeping the attacker trapped in the illusion.
+3. **The RECORDER:** An independent monitoring system that logs every keystroke, calculates deterministic threat scores, and maps techniques to MITRE ATT&CK in real-time via WebSockets.
+
+---
+
+## 🏗️ Architecture & Security Guarantees
+
+### 🛡️ Zero-RCE (Remote Code Execution) Design
+HoneySwarm is mathematically incapable of being compromised by the attacker. 
+* **No Real Shell:** The terminal is a Node.js string parser, not a bash wrapper. There is no `child_process.exec()` anywhere in the codebase.
+* **JSON Filesystem:** The entire "Linux filesystem" is a structured JSON document in memory. 
+* **Air-gapped AI:** The LLM can only return text. Our strict JSON-output validator ensures the AI can never modify the simulation state, escalate privileges, or execute commands. Even if an attacker uploads a real zero-day exploit script, it sits harmlessly as a text string in the database.
+
+### 🧠 Hybrid "Deterministic-First" AI Engine
+Sending every terminal command to an LLM is slow, expensive, and unpredictable. HoneySwarm uses a hybrid approach:
+* **Known Commands** (`ls`, `cat`, `whoami`, `su`, `sudo`): Handled instantly by the deterministic engine to ensure the environment remains consistent and stateful.
+* **Unknown Commands** (`python exploit.py`, `nmap`, `curl`): Flagged and routed to Groq. The AI hallucinates a highly plausible, context-aware error or output (e.g., `Traceback: ModuleNotFoundError`), maintaining the illusion of a real server without wasting API tokens.
+
+### 🔀 Transparent Routing (Production Vision)
+*In this MVP, we use a direct `/portal` link to reliably trigger the deception environment for demonstration purposes.* 
+In a production deployment, HoneySwarm sits behind a Reverse Proxy/WAF. Normal users are routed to the real corporate backend. The moment a user exhibits suspicious probing (SQLi, directory busting), the WAF silently flips their session to `deception`, transparently routing them into the honeypot without them ever knowing.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React, Vite, Tailwind CSS, React Router, Socket.IO Client, Recharts
+* **Backend:** Node.js, Express, Socket.IO
+* **Database:** SQLite (`better-sqlite3` for synchronous, high-performance state)
+* **AI Providers:** Groq API (Primary), LM Studio (Secondary), Deterministic Rules (Fallback)
+* **Reporting:** PDFKit
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+* Node.js v18+ installed
+* A free Groq API key (get one at [console.groq.com](https://console.groq.com))
+
+### 1. Clone & Install
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd HoneySwarm
+
+# Install Backend dependencies
+cd backend && npm install
+
+# Install Frontend dependencies
+cd ../frontend && npm install
 
 ---
 
