@@ -255,17 +255,23 @@ Create `.env` files according to the provided environment examples.
 Example backend configuration:
 
 ```env
+# Backend
 PORT=5000
 DATABASE_PATH=./data/honeyswarm.db
-SESSION_SECRET=replace_with_a_secure_random_secret
+SESSION_SECRET=super_secret_honeyswarm_key_change_me
+FRONTEND_URL=http://localhost:5173
 
-AI_PROVIDER=openrouter
-OPENROUTER_API_KEY=your_api_key
-OPENROUTER_MODEL=openrouter/free
+# AI Providers
+AI_PROVIDER=groq
+GROQ_API_KEY=API_KEY
+GROQ_MODEL=MODEL_NAME_CHANGE_ME
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 
 LM_STUDIO_BASE_URL=http://localhost:1234/v1
 LM_STUDIO_MODEL=
 LM_STUDIO_API_KEY=
+
+JWT_SECRET=super_secret_honeyswarm_key_change_me
 ```
 
 Never commit actual API keys, passwords or secrets.
