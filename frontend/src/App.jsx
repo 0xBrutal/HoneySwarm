@@ -1,30 +1,32 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
-function PublicHome() {
-  return (
-    <div className="p-8 min-h-screen bg-gray-50 text-gray-900">
-      <h1 className="text-3xl font-bold text-blue-800">HoneySwarm Public Portal</h1>
-      <p className="mt-4 text-lg">Normal visitor experience. (Milestone 1 will build the corporate site)</p>
-    </div>
-  );
-}
-
-function DefenderDashboard() {
-  return (
-    <div className="p-8 min-h-screen bg-navy text-cyan-400">
-      <h1 className="text-3xl font-bold">Defender Dashboard</h1>
-      <p className="mt-4 text-lg">Protected workspace. (Milestone 5 will build the SOC interface)</p>
-    </div>
-  );
-}
+// Pages
+import PublicHome from './pages/PublicHome';
+import DefenderLogin from './pages/DefenderLogin';
+import DefenderDashboard from './pages/DefenderDashboard';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PublicHome />} />
-        <Route path="/defender" element={<DefenderDashboard />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<PublicHome />} />
+          <Route path="/portal" element={<PublicHome />} /> {/* Will become deception entry later */}
+          
+          {/* Defender Auth */}
+          <Route path="/defender/login" element={<DefenderLogin />} />
+          
+          {/* Protected Defender Routes */}
+          <Route path="/defender" element={
+            <ProtectedRoute>
+              <DefenderDashboard />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
