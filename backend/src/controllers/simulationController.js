@@ -36,7 +36,7 @@ function createSession(req, res) {
       severity: 'info',
       source: 'session-manager',
       metadata: { submittedUser: portalLogin.username, passwordProvided: !!portalLogin.password },
-    });
+    }, null, req.app.get('io'));
   }
 
   res.status(201).json({ sessionId, routingStage: 'observe' });
@@ -88,7 +88,7 @@ async function terminal(req, res) {
 
     persistState(db, session.id, state);
     for (const ev of result.events) {
-      recordEvent(db, session.id, { ...ev, endpoint: '/api/simulation/terminal' });
+      recordEvent(db, session.id, { ...ev, endpoint: '/api/simulation/terminal' }, state, req.app.get('io'));
     }
 
     res.json({ output: result.output, events: result.events.map((e) => e.eventType), state: publicState(state), ai: aiInfo });
@@ -125,7 +125,7 @@ async function chat(req, res) {
       source: `ai-response-engine:${aiResult.provider}`,
       endpoint: '/api/simulation/chat',
       metadata: { provider: aiResult.provider, confidence: aiResult.confidence },
-    });
+    }, state, req.app.get('io'));
 
     res.json({ reply: aiResult.response, provider: aiResult.provider });
   } catch (err) {
@@ -165,7 +165,7 @@ function fileContent(req, res) {
       severity: 'high', source: 'simulation-engine',
       endpoint: '/api/simulation/file-content',
       metadata: { path: target, decoyType: result.decoy.type },
-    });
+    }, state, req.app.get('io'));
   }
   recordEvent(db, session.id, {
     eventType: 'file_read', action: `open ${requested}`,
@@ -173,7 +173,7 @@ function fileContent(req, res) {
     severity: result.sensitive ? 'medium' : 'info', source: 'simulation-engine',
     endpoint: '/api/simulation/file-content',
     metadata: { path: target, sensitive: result.sensitive },
-  });
+  }, state, req.app.get('io'));
 
   persistState(db, session.id, state);
   res.json({ path: target, name: target.split('/').pop(), content: result.content });

@@ -27,6 +27,7 @@ if (!db) {
     console.error('[Server] WARNING: Database failed to initialize. Features relying on DB will not work.');
 }
 app.set('db', db);
+app.set('io', io);
 
 // Health check
 app.get('/api/health', (req, res) => {
