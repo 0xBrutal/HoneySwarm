@@ -22,3 +22,5 @@ api.interceptors.request.use(
 );
 
 export default api;
+export const fetchSessions = () => api.get('/intelligence/sessions').then(res => res.data);
+export const fetchSessionIntelligence = (sessionId) => api.get(`/intelligence/sessions/${sessionId}`).then(res => res.data);
