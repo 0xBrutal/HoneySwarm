@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const initDB = require('./src/database/init');
+const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -33,6 +34,8 @@ app.get('/api/health', (req, res) => {
         db: db ? 'connected' : 'failed'
     });
 });
+
+app.use('/api/auth', authRoutes);
 
 // Socket.IO connection
 io.on('connection', (socket) => {
