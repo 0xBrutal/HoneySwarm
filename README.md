@@ -1,368 +1,370 @@
-# 🍯 HoneySwarm
+# HoneySwarm
 ### Let Them In. Learn Everything.
 
-**An AI-powered adaptive cyber deception platform that transforms suspicious interactions into actionable threat intelligence.**
+**An AI-powered adaptive cyber deception and threat intelligence platform.**
 
-<p align="center">
-  <strong>Observe · Deceive · Analyze · Learn</strong>
-</p>a# 🍯 HoneySwarm
-### *Let Them In. Learn Everything.*
+HoneySwarm is a cybersecurity project designed to go beyond conventional threat detection. Instead of simply identifying and blocking suspicious activity, it uses adaptive cyber deception to study potentially malicious behaviour in a controlled, isolated environment.
 
-**HoneySwarm** is an AI-powered adaptive cyber deception platform. Instead of simply blocking attackers or relying on static, easily-fingerprinted honeypots, HoneySwarm safely engages them in a highly realistic, isolated corporate environment. It studies their behavior, maps their actions to the **MITRE ATT&CK framework** in real-time, and generates actionable threat intelligence for security teams.
-
-> 🏆 **Hackathon Track:** Open Innovation — AI-Powered Cybersecurity & Adaptive Deception
+When a visitor demonstrates sufficiently suspicious behaviour, HoneySwarm can silently route that session into a simulated corporate environment. The visitor interacts with fictional applications, files, accounts, and system interfaces, while the platform records activity and converts observed behaviour into actionable threat intelligence for defenders.
 
 ---
 
-## 🛑 The Problem
-Traditional cybersecurity focuses on building higher walls. But when an attacker inevitably bypasses the perimeter, defenders learn nothing about their motives, tools, or next moves. Conventional honeypots attempt to solve this, but they are **static**. Attackers can fingerprint them in seconds, rendering them useless. If you just block an attacker, you lose the opportunity to study them.
+## 1. Problem Statement
 
-## 💡 The Solution
-HoneySwarm doesn't just block; it **engages**. It dynamically generates a fictional corporate environment ("Vertex Dynamics") that adapts to the attacker's actions. 
+Traditional cybersecurity systems primarily focus on detecting, blocking, and preventing malicious activity. However, identifying an attack does not necessarily reveal an attacker's intentions, techniques, objectives, or next moves.
 
-### The Three Pillars of HoneySwarm:
-1. **The BAIT:** A fully simulated, isolated Linux environment, corporate intranet, cloud drive, and HR chatbot. It contains planted "canary" credentials and synthetic sensitive data.
-2. **The BRAIN:** A hybrid AI engine. It uses deterministic rules for standard commands (ensuring zero latency and perfect consistency) and routes unknown, complex commands to an LLM (Groq) to dynamically hallucinate plausible outputs, keeping the attacker trapped in the illusion.
-3. **The RECORDER:** An independent monitoring system that logs every keystroke, calculates deterministic threat scores, and maps techniques to MITRE ATT&CK in real-time via WebSockets.
+Conventional honeypots provide visibility into attacker behaviour, but static environments often fail to adapt to evolving techniques, limiting meaningful engagement and intelligence collection.
 
----
+Organizations need a smarter deception approach that can safely engage suspicious actors, study their behaviour, and transform their interactions into actionable threat intelligence without exposing legitimate users or real infrastructure.
 
-## 🏗️ Architecture & Security Guarantees
+## 2. Our Solution
 
-### 🛡️ Zero-RCE (Remote Code Execution) Design
-HoneySwarm is mathematically incapable of being compromised by the attacker. 
-* **No Real Shell:** The terminal is a Node.js string parser, not a bash wrapper. There is no `child_process.exec()` anywhere in the codebase.
-* **JSON Filesystem:** The entire "Linux filesystem" is a structured JSON document in memory. 
-* **Air-gapped AI:** The LLM can only return text. Our strict JSON-output validator ensures the AI can never modify the simulation state, escalate privileges, or execute commands. Even if an attacker uploads a real zero-day exploit script, it sits harmlessly as a text string in the database.
+HoneySwarm introduces an AI-assisted adaptive deception platform that combines behavioural detection, simulated environments, contextual AI interactions, and centralized threat monitoring.
 
-### 🧠 Hybrid "Deterministic-First" AI Engine
-Sending every terminal command to an LLM is slow, expensive, and unpredictable. HoneySwarm uses a hybrid approach:
-* **Known Commands** (`ls`, `cat`, `whoami`, `su`, `sudo`): Handled instantly by the deterministic engine to ensure the environment remains consistent and stateful.
-* **Unknown Commands** (`python exploit.py`, `nmap`, `curl`): Flagged and routed to Groq. The AI hallucinates a highly plausible, context-aware error or output (e.g., `Traceback: ModuleNotFoundError`), maintaining the illusion of a real server without wasting API tokens.
+The platform follows three core principles:
 
-### 🔀 Transparent Routing (Production Vision)
-*In this MVP, we use a direct `/portal` link to reliably trigger the deception environment for demonstration purposes.* 
-In a production deployment, HoneySwarm sits behind a Reverse Proxy/WAF. Normal users are routed to the real corporate backend. The moment a user exhibits suspicious probing (SQLi, directory busting), the WAF silently flips their session to `deception`, transparently routing them into the honeypot without them ever knowing.
+- **Detect:** Identify suspicious activity through behavioural analysis and deterministic detection rules.
+- **Deceive:** Provide suspicious sessions with a convincing, isolated fictional corporate environment.
+- **Learn:** Record interactions, classify observed techniques, and present threat intelligence through a defender dashboard.
 
----
+The goal is not merely to detect suspicious activity, but to understand what happens after suspicious activity is identified.
 
-## 🛠️ Tech Stack
+## 3. Core Architecture
 
-* **Frontend:** React, Vite, Tailwind CSS, React Router, Socket.IO Client, Recharts
-* **Backend:** Node.js, Express, Socket.IO
-* **Database:** SQLite (`better-sqlite3` for synchronous, high-performance state)
-* **AI Providers:** Groq API (Primary), LM Studio (Secondary), Deterministic Rules (Fallback)
-* **Reporting:** PDFKit
+HoneySwarm is organized around three major components.
 
----
+### BAIT — The Deception Environment
 
-## 🚀 Getting Started
+BAIT provides the simulated corporate environment in which suspicious visitors can interact.
 
-### Prerequisites
-* Node.js v18+ installed
-* A free Groq API key (get one at [console.groq.com](https://console.groq.com))
+Potential simulated resources include:
 
-### 1. Clone & Install
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd HoneySwarm
+- Employee portals and internal dashboards.
+- Fictional employee directories and accounts.
+- Simulated cloud storage and confidential documents.
+- Fake administrative panels and permissions.
+- Internal communications and announcements.
+- A simulated terminal and fictional filesystem.
 
-# Install Backend dependencies
-cd backend && npm install
+The environment is designed to appear like an ordinary corporate application rather than an obvious honeypot.
 
-# Install Frontend dependencies
-cd ../frontend && npm install
+### BRAIN — The Adaptive AI Engine
 
----
+BRAIN provides contextual intelligence for interactions within the simulated environment.
 
-## Overview
+Its responsibilities include:
 
-Traditional cybersecurity systems focus on detecting, blocking, and preventing malicious activity. However, identifying suspicious behaviour does not always reveal an attacker's intentions, techniques, objectives, or next moves.
+- Interpreting unexpected visitor interactions.
+- Generating context-aware simulated responses.
+- Maintaining consistency with the fictional environment.
+- Supporting adaptive interactions rather than relying exclusively on static responses.
+- Falling back to deterministic responses when an AI provider is unavailable.
 
-HoneySwarm explores a different approach: **instead of simply blocking suspicious actors, engage them in a controlled deceptive environment and learn from their behaviour.**
+AI-generated responses are constrained to the simulation. They do not execute commands on the host operating system or access real infrastructure.
 
-HoneySwarm is an AI-powered adaptive cyber deception platform that combines behavioural detection, isolated simulated environments, contextual AI responses, and centralized threat intelligence.
+### RECORDER — The Threat Intelligence Engine
 
-When a session exhibits sufficient suspicious behaviour, the system can assign it to a fictional corporate environment where interactions are simulated and monitored. Defenders can investigate activity through a dedicated dashboard and examine the resulting intelligence.
+RECORDER observes and analyzes activity within the deception environment.
 
-## Core Components
+Its responsibilities include:
 
-### 🍯 1. BAIT — Adaptive Deception Environment
+- Recording session events and interaction history.
+- Identifying suspicious behaviour patterns.
+- Mapping supported observations to MITRE ATT&CK techniques.
+- Generating evidence-based threat scores.
+- Providing session timelines and investigation data.
+- Presenting threat intelligence through the defender dashboard.
 
-A realistic fictional corporate environment designed to engage suspicious visitors.
+MITRE ATT&CK classifications should be supported by recorded evidence rather than unsupported assumptions.
 
-Planned simulated resources include:
+flowchart TB
+    subgraph USERS["Application Users"]
+        V["Normal Visitor"]
+        A["Suspicious Visitor"]
+        D["Security Defender"]
+    end
 
-- Employee portals and directories.
-- Internal company applications.
-- Simulated cloud storage.
-- Fictional confidential documents.
-- Administrative dashboards.
-- Simulated terminals and filesystems.
-- Internal communication systems.
+    subgraph FRONTEND["Frontend - React + Vite"]
+        PUB["Corporate Website"]
+        DECOY["Deception Interface"]
+        DASH["Defender Dashboard"]
+    end
 
-The environment maintains isolated session state and responds to interactions without exposing real infrastructure.
+    subgraph BACKEND["Backend - Node.js + Express"]
+        SM["Session Manager"]
+        DET["Detection Engine"]
+        SIM["Simulation Engine"]
+        AI["AI Response Engine"]
+        REC["Event Recorder"]
+        TI["Threat Intelligence Engine"]
+    end
 
-### 🧠 2. BRAIN — Adaptive AI Engine
+    subgraph AI_LAYER["AI Providers"]
+        OR["OpenRouter"]
+        LM["LM Studio"]
+        FB["Rule-Based Fallback"]
+    end
 
-A hybrid response engine combining deterministic simulation rules with contextual AI.
+    subgraph STORAGE["Data Layer"]
+        DB[("SQLite Database")]
+    end
 
-Capabilities include:
+    V --> PUB
+    A --> PUB
+    D --> DASH
 
-- Context-aware simulated responses.
-- Adaptive interaction handling.
-- Session-aware conversation context.
-- Fictional resource discovery.
-- Simulated permission and state changes.
-- AI-assisted handling of unexpected interactions.
-- Deterministic fallback when AI providers are unavailable.
+    PUB --> SM
+    SM --> DET
+    DET --> SIM
+    SIM --> DECOY
+    DECOY --> AI
+    AI --> OR
+    AI --> LM
+    AI --> FB
 
-Planned provider priority:
+    SIM --> REC
+    AI --> REC
+    REC --> DB
+    REC --> TI
+    TI --> DB
+    DB --> DASH
 
-1. OpenRouter.
-2. LM Studio.
-3. Deterministic rule-based fallback.
+## 4. How It Works
 
-AI-generated output is validated before it can influence simulated state. The AI does not execute real commands or access real infrastructure.
+The HoneySwarm workflow follows this sequence:
 
-### 🔍 3. RECORDER — Threat Intelligence Engine
+1. A visitor accesses the application.
+2. The backend monitors relevant session behaviour.
+3. A detection engine evaluates suspicious activity using predefined rules and behavioural indicators.
+4. When sufficient evidence is available, the backend can route the suspicious session into an isolated deception environment.
+5. The visitor interacts with simulated corporate resources.
+6. The AI engine provides contextual responses where appropriate.
+7. The recorder captures interactions and relevant events.
+8. The threat intelligence engine analyzes supported behaviour and identifies relevant techniques.
+9. Defenders inspect sessions, timelines, and intelligence through the monitoring dashboard.
 
-A monitoring and analysis layer that converts interactions into security intelligence.
+**Important:** Suspicious behaviour should not automatically result in deception based on a single unusual request. Routing decisions should be evidence-based and controlled by backend detection logic.
 
-Planned capabilities:
+flowchart TD
+    A["Visitor accesses HoneySwarm"] --> B["Backend Session Manager"]
+    B --> C["Behaviour Detection Engine"]
+    C --> D{"Suspicious activity?"}
 
-- Security event recording.
-- Session timelines.
-- Behavioural analysis.
+    D -->|No| E["Normal Website Experience"]
+    D -->|Insufficient Evidence| F["Continue Monitoring"]
+    F --> C
+    D -->|Sufficient Evidence| G["Isolated Deception Environment"]
+
+    G --> H["BAIT: Simulated Corporate Environment"]
+    H --> I["BRAIN: Adaptive AI Interaction"]
+    I --> J["RECORDER: Capture Session Events"]
+
+    J --> K["Threat Analysis Engine"]
+    K --> L["MITRE ATT&CK Mapping"]
+    K --> M["Evidence-Based Threat Scoring"]
+
+    L --> N["Defender Dashboard"]
+    M --> N
+    N --> O["Investigation and Threat Intelligence"]
+
+## 5. Technology Stack
+
+| Layer | Technologies | Purpose |
+|---|---|---|
+| Frontend | React, Vite | User interface and application development |
+| Styling | Tailwind CSS, shadcn/ui | Responsive interface and reusable components |
+| UI Libraries | Lucide React, Framer Motion | Icons and animations |
+| Visualization | Recharts | Threat intelligence and activity charts |
+| Navigation | React Router | Application routing |
+| Backend | Node.js, Express.js | Server-side logic and REST APIs |
+| Real-time Communication | Socket.IO | Live events and dashboard updates |
+| Database | SQLite | Application and event data storage |
+| AI Integration | OpenRouter | Cloud-based AI model access |
+| Local AI | LM Studio | Local model integration |
+| AI Models | Qwen models | Contextual simulated interactions |
+| Threat Intelligence | MITRE ATT&CK | Adversary technique classification |
+| Version Control | Git, GitHub | Source control and collaboration |
+
+## 6. Security and Isolation
+
+Security is a fundamental requirement of the HoneySwarm architecture.
+
+The deception environment is intended to remain separate from real application infrastructure.
+
+Key design considerations include:
+
+- Backend-controlled session routing and authorization.
+- Isolated simulated state for individual visitor sessions.
+- No execution of attacker-supplied commands on the host system.
+- No access to real production files, accounts, or infrastructure from the simulation engine.
+- AI-generated content is validated before it can affect simulated state.
+- Event recording does not depend on successful AI responses.
+- AI provider failures should not prevent deterministic simulation behaviour.
+- API keys and other secrets must be stored in environment variables and excluded from version control.
+
+HoneySwarm is intended for authorized security research, controlled demonstrations, and defensive cybersecurity experimentation.
+
+## 7. Threat Intelligence and MITRE ATT&CK
+
+HoneySwarm uses the MITRE ATT&CK framework as a reference for classifying observed adversarial behaviour.
+
+Examples of techniques that may be identified when supported by evidence include:
+
+| Technique ID | Technique | Example Observation |
+|---|---|---|
+| T1087 | Account Discovery | Attempts to enumerate simulated accounts |
+| T1083 | File and Directory Discovery | Attempts to explore simulated files |
+| T1082 | System Information Discovery | Requests for simulated system information |
+| T1057 | Process Discovery | Attempts to inspect simulated processes |
+| T1016 | System Network Configuration Discovery | Requests for simulated network configuration |
+
+Technique classifications should include supporting event evidence and confidence information. A generic command or request should not automatically be treated as proof of a more advanced attack.
+
+## 8. Defender Dashboard
+
+The defender interface is designed to provide centralized visibility into suspicious sessions and collected intelligence.
+
+Its intended monitoring capabilities include:
+
+- Security overview and activity metrics.
+- Active and historical sessions.
+- Live event monitoring.
+- Session activity timelines.
+- Suspicious behaviour classification.
 - MITRE ATT&CK technique mapping.
 - Evidence-based threat scoring.
-- Attacker objective estimation.
-- Session investigation.
-- AI-generated incident summaries.
-- Exportable reports.
+- Investigation of individual sessions.
+- AI-assisted incident summaries.
+- Exportable investigation reports.
 
-Observed events, deterministic classifications, estimates and AI-generated interpretations are kept distinguishable.
+Dashboard statistics and visualizations should be derived from recorded application events rather than fabricated demonstration data.
 
----
+## 9. AI Integration and Reliability
 
-## How It Works
+HoneySwarm uses a hybrid approach combining deterministic logic and AI-assisted interactions.
 
-```mermaid
+**OpenRouter:** Primary cloud-based AI integration.
+
+**LM Studio:** Local model integration through an OpenAI-compatible API.
+
+**Rule-based fallback:** Provides deterministic responses for known interactions and basic simulated commands when AI services are unavailable.
+
+The AI engine is used to improve contextual interactions, not to make authoritative security decisions. Detection, session routing, event recording, and access control remain backend responsibilities.
+
 flowchart TD
-    A[Visitor accesses corporate website] --> B[Behavioural Detection Engine]
-    B --> C{Suspicious activity?}
-    C -->|No| D[Normal Website Experience]
-    C -->|Yes| E[Evidence and Confidence Evaluation]
-    E --> F{Sufficient Evidence?}
-    F -->|No| B
-    F -->|Yes| G[Isolated Deception Session]
-    G --> H[Simulation Engine]
-    H --> I[Adaptive AI / Rule Engine]
-    I --> J[Simulated Response]
-    G --> K[Event Recorder]
-    J --> K
-    K --> L[Threat Intelligence Engine]
-    L --> M[Protected Defender Dashboard]
-```
+    A["Suspicious Visitor Interaction"] --> B["Simulation Engine"]
+    B --> C{"Known simulated interaction?"}
 
-## Key Features
+    C -->|Yes| D["Deterministic Response"]
+    C -->|No| E["AI Response Engine"]
 
-The following represents the intended MVP scope. Individual features should be marked as implemented only after verification.
+    E --> F["Try OpenRouter"]
+    F --> G{"Provider Available?"}
+    G -->|Yes| H["Generate Contextual Response"]
+    G -->|No| I["Try LM Studio"]
 
-| Feature | Purpose |
-|---|---|
-| Behavioural detection | Identify suspicious interaction patterns |
-| Progressive deception | Escalate from observation to controlled deception |
-| Session isolation | Keep simulated attacker environments independent |
-| Adaptive AI responses | Generate contextual simulated interactions |
-| Rule-based fallback | Maintain functionality without an AI provider |
-| Event recording | Preserve security-relevant activity |
-| MITRE ATT&CK mapping | Associate supported behaviours with techniques |
-| Threat scoring | Quantify observed suspicious activity |
-| Live monitoring | Display active sessions and events |
-| Incident reporting | Generate investigation reports |
-| Automated attack scenario | Demonstrate the attack-to-intelligence workflow |
+    I --> J{"Local Model Available?"}
+    J -->|Yes| H
+    J -->|No| K["Rule-Based Fallback"]
 
-## Technology Stack
+    D --> L["Validate Simulated Response"]
+    H --> L
+    K --> L
 
-The planned technology stack includes:
+    L --> M["Update Fictional Environment"]
+    M --> N["Record Interaction Event"]
+    N --> O["Threat Analysis"]
+    O --> P["MITRE ATT&CK Classification"]
+    O --> Q["Threat Scoring"]
+    P --> R["Defender Dashboard"]
+    Q --> R
 
-| Layer | Technologies |
-|---|---|
-| Frontend | React, Vite |
-| Styling | Tailwind CSS, shadcn/ui |
-| Backend | Node.js, Express |
-| Database | SQLite |
-| Realtime communication | Socket.IO |
-| Visualization | Recharts |
-| Animation | Framer Motion |
-| AI integration | OpenRouter, LM Studio |
-| Threat classification | Rule-based MITRE ATT&CK mapping |
+## 10. Project Scope and Limitations
 
-## Architecture
+HoneySwarm is developed as a controlled cybersecurity prototype.
 
-HoneySwarm is designed as a modular full-stack application.
+Its simulated applications, accounts, documents, terminal, and internal network representations are fictional. It is not intended to provide access to real corporate systems or execute real attacker commands.
 
-Core backend modules:
+The accuracy of threat classifications depends on the available observations and detection rules. AI-generated interpretations may require human review.
 
-- `session-manager`
-- `detection-engine`
-- `simulation-engine`
-- `ai-response-engine`
-- `event-recorder`
-- `threat-classifier`
-- `dashboard-service`
+The prototype should not be considered a replacement for production intrusion detection, endpoint protection, network monitoring, or incident response systems.
 
-The frontend provides separate experiences for public visitors, simulated attacker sessions, and authorized defenders.
+Production deployment would require additional security testing, privacy review, scalability work, monitoring, and operational safeguards.
 
-The backend is responsible for session routing, authorization, isolation, event recording and simulation state.
-
-## Getting Started
-
-> **Development status:** Setup instructions will be finalized and verified as the MVP implementation is completed.
+## 11. Getting Started
 
 ### Prerequisites
 
-- Node.js (LTS recommended).
-- npm.
+- Node.js and npm.
 - Git.
-- An OpenRouter API key for cloud AI, or LM Studio for local AI.
+- A supported browser.
+- An AI provider or local LM Studio instance, if AI functionality is enabled.
 
 ### Clone the repository
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/HoneySwarm.git
+git clone https://github.com/0xBrutal/HoneySwarm.git
 cd HoneySwarm
 ```
 
 ### Install dependencies
 
-Once the frontend and backend packages are available:
+Install dependencies in the frontend and backend directories:
 
 ```bash
 cd frontend
 npm install
+```
 
+```bash
 cd ../backend
 npm install
 ```
 
 ### Configure environment variables
 
-Create `.env` files according to the provided environment examples.
+Create the required `.env` file in the backend directory according to the project's environment configuration.
 
-Example backend configuration:
+Example configuration keys:
 
 ```env
-# Backend
 PORT=5000
-DATABASE_PATH=./data/honeyswarm.db
-SESSION_SECRET=super_secret_honeyswarm_key_change_me
-FRONTEND_URL=http://localhost:5173
+DATABASE_PATH=./database/honeyswarm.db
 
-# AI Providers
-AI_PROVIDER=groq
-GROQ_API_KEY=API_KEY
-GROQ_MODEL=MODEL_NAME_CHANGE_ME
-GROQ_BASE_URL=https://api.groq.com/openai/v1
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=
 
 LM_STUDIO_BASE_URL=http://localhost:1234/v1
 LM_STUDIO_MODEL=
-LM_STUDIO_API_KEY=
-
-JWT_SECRET=super_secret_honeyswarm_key_change_me
 ```
 
-Never commit actual API keys, passwords or secrets.
+Use the actual variable names defined by the application configuration. Never commit real API keys or secrets.
 
 ### Run the application
 
-The exact development commands will be documented after the project scripts are finalized.
+Start the backend and frontend using the development scripts defined in their respective `package.json` files.
 
-## Security and Privacy
+The exact commands and required configuration depend on the final repository implementation.
 
-HoneySwarm is designed as a defensive cybersecurity research and demonstration platform.
+## 12. Future Scope
 
-Security principles:
+Potential improvements include:
 
-- Fictional credentials and company data.
-- Isolated simulated environments.
-- No real shell execution.
-- No unauthorized access to production infrastructure.
-- Backend-protected defender endpoints.
-- Validated AI-generated responses.
-- Privacy-conscious security event collection.
-- No unnecessary collection of personal information.
+- More advanced behavioural detection and anomaly analysis.
+- Additional simulated corporate applications and services.
+- Improved multi-session correlation.
+- Expanded MITRE ATT&CK coverage.
+- More sophisticated AI-driven deception strategies.
+- Enhanced threat visualization and investigation workflows.
+- Scalable deployment and centralized management.
+- Additional reporting and integration capabilities.
 
-**HoneySwarm must not be deployed to intercept real users or production traffic without proper authorization, security review, privacy safeguards and operational testing.**
+## 13. Project Vision
 
-## Project Status
+HoneySwarm explores a different approach to cybersecurity.
 
-HoneySwarm is being developed as a hackathon MVP.
+Instead of focusing exclusively on keeping attackers out, it investigates how controlled deception can reveal what suspicious actors attempt to do, what resources they seek, and which techniques they demonstrate.
 
-Planned development priorities:
+**Detect the behaviour. Control the environment. Understand the threat.**
 
-1. Application foundation and authentication.
-2. Public corporate website.
-3. Isolated deception environment.
-4. Detection and event recording.
-5. Adaptive AI integration.
-6. Defender dashboard.
-7. Automated attack demonstration.
-8. Incident reporting and integration testing.
-
-Features should be updated here as they become implemented and verified.
-
-## Roadmap
-
-### Phase 1 — MVP
-- Functional corporate website.
-- Behavioural detection.
-- Isolated simulated environment.
-- Adaptive AI with fallback.
-- Event recording.
-- Defender dashboard.
-
-### Phase 2 — Enhanced Intelligence
-- Expanded MITRE ATT&CK mapping.
-- Richer threat analysis.
-- Advanced session investigation.
-- Improved incident reporting.
-- Multi-session correlation.
-
-### Phase 3 — Advanced Deception Platform
-- More sophisticated simulated environments.
-- Expanded security integrations.
-- Improved behavioural intelligence.
-- Advanced deception strategies.
-
-## Contributing
-
-Contributions, ideas and technical feedback are welcome.
-
-Before submitting changes:
-
-1. Check existing issues and project requirements.
-2. Keep changes focused.
-3. Test the affected functionality.
-4. Document new configuration requirements.
-5. Avoid introducing real credentials or sensitive information.
-
-## Disclaimer
-
-HoneySwarm is intended for authorized defensive cybersecurity research, controlled demonstrations, education and experimentation.
-
-It is not intended to facilitate unauthorized access, exploitation, credential theft or malicious activity.
-
-Use the platform only in environments you own or have explicit authorization to test.
-
-## License
-
-This project is licensed under the Apache License 2.0.
-
-See the [LICENSE](LICENSE) file for details.
-
----
-
-**HoneySwarm — Let Them In. Learn Everything.**
+### HoneySwarm — Let Them In. Learn Everything.
