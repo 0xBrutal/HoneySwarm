@@ -83,61 +83,11 @@ MITRE ATT&CK classifications should be supported by recorded evidence rather tha
 
 ### System Architecture Flow
 
-```mermaid
-flowchart TB
-    subgraph USERS["Application Users"]
-        V["Normal Visitor"]
-        A["Suspicious Visitor"]
-        D["Security Defender"]
-    end
-
-    subgraph FRONTEND["Frontend - React + Vite"]
-        PUB["Corporate Website"]
-        DECOY["Deception Interface"]
-        DASH["Defender Dashboard"]
-    end
-
-    subgraph BACKEND["Backend - Node.js + Express"]
-        SM["Session Manager"]
-        DET["Detection Engine"]
-        SIM["Simulation Engine"]
-        AI["AI Response Engine"]
-        REC["Event Recorder"]
-        TI["Threat Intelligence Engine"]
-    end
-
-    subgraph AI_LAYER["AI Providers"]
-        GROQ["Groq API"]
-        LM["LM Studio"]
-        FB["Rule-Based Fallback"]
-    end
-
-    subgraph STORAGE["Data Layer"]
-        DB[("SQLite Database")]
-    end
-
-    V --> PUB
-    A --> PUB
-    D --> DASH
-
-    PUB --> SM
-    SM --> DET
-    DET -->|"Normal activity"| PUB
-    DET -->|"Sufficient evidence"| SIM
-    SIM --> DECOY
-    DECOY --> AI
-
-    AI --> GROQ
-    AI --> LM
-    AI --> FB
-
-    SIM --> REC
-    AI --> REC
-    REC --> DB
-    REC --> TI
-    TI --> DB
-    DB --> DASH
-```
+<div align="center">
+  <img src="images/HoneySwarm_Flowchart_1.svg"
+       alt="HoneySwarm System Architecture"
+       width="100%">
+</div>
 
 ## ⚙️ 4. How HoneySwarm Works
 
@@ -156,30 +106,11 @@ HoneySwarm follows a progressive detection and deception workflow.
 
 ### End-to-End Workflow
 
-```mermaid
-flowchart TD
-    A["🌐 Visitor accesses HoneySwarm"] --> B["Backend Session Manager"]
-    B --> C["Behaviour Detection Engine"]
-    C --> D{"Suspicious activity?"}
-
-    D -->|"No"| E["Normal Website Experience"]
-    D -->|"Unclear"| F["Continue Monitoring"]
-    F --> C
-
-    D -->|"Sufficient evidence"| G["Isolated Deception Environment"]
-
-    G --> H["BAIT: Simulated Corporate Environment"]
-    H --> I["BRAIN: Adaptive AI Interaction"]
-    I --> J["RECORDER: Capture Session Events"]
-
-    J --> K["Threat Analysis Engine"]
-    K --> L["MITRE ATT&CK Mapping"]
-    K --> M["Evidence-Based Threat Scoring"]
-
-    L --> N["Defender Dashboard"]
-    M --> N
-    N --> O["Investigation and Threat Intelligence"]
-```
+<div align="center">
+  <img src="images/HoneySwarm_Flowchart_2.svg"
+       alt="HoneySwarm End-to-End Workflow"
+       width="85%">
+</div>
 
 **Important:** A single unusual request should not automatically trigger deception. Routing decisions should be evidence-based and controlled by backend detection logic.
 
@@ -268,38 +199,11 @@ HoneySwarm uses a hybrid approach combining deterministic logic and AI-assisted 
 
 ### AI Interaction Workflow
 
-```mermaid
-flowchart TD
-    A["Suspicious Visitor Interaction"] --> B["Simulation Engine"]
-    B --> C{"Known simulated interaction?"}
-
-    C -->|"Yes"| D["Deterministic Response"]
-    C -->|"No"| E["AI Response Engine"]
-
-    E --> F["Try Groq API"]
-    F --> G{"Provider Available?"}
-
-    G -->|"Yes"| H["Generate Contextual Response"]
-    G -->|"No"| I["Try LM Studio"]
-
-    I --> J{"Local Model Available?"}
-    J -->|"Yes"| H
-    J -->|"No"| K["Rule-Based Fallback"]
-
-    D --> L["Validate Simulated Response"]
-    H --> L
-    K --> L
-
-    L --> M["Update Fictional Environment"]
-    M --> N["Record Interaction Event"]
-    N --> O["Threat Analysis"]
-
-    O --> P["MITRE ATT&CK Classification"]
-    O --> Q["Threat Scoring"]
-
-    P --> R["Defender Dashboard"]
-    Q --> R
-```
+<div align="center">
+  <img src="images/HoneySwarm_Flowchart_3.svg"
+       alt="HoneySwarm AI Interaction Workflow"
+       width="85%">
+</div>
 
 The AI engine improves contextual interactions but does not make authoritative security decisions. Detection, session routing, event recording, and access control remain backend responsibilities.
 
