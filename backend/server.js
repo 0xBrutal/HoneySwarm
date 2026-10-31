@@ -7,6 +7,8 @@ const initDB = require('./src/database/init');
 const authRoutes = require('./src/routes/authRoutes');
 const simulationRoutes = require('./src/routes/simulationRoutes');
 const intelligenceRoutes = require('./src/routes/intelligenceRoutes');
+const aiRoutes = require('./src/routes/aiRoutes');
+const defenderRoutes = require('./src/routes/defenderRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,6 +28,7 @@ if (!db) {
     console.error('[Server] WARNING: Database failed to initialize. Features relying on DB will not work.');
 }
 app.set('db', db);
+app.set('io', io);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -41,7 +44,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
-
+app.use('/api/ai', aiRoutes);
+app.use('/api/defender', defenderRoutes);
 
 // Socket.IO connection
 io.on('connection', (socket) => {

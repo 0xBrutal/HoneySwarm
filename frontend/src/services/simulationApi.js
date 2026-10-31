@@ -51,9 +51,14 @@ export const createSession = async (portalLogin) => {
   return res;
 };
 
+export function attachSession(sessionId) {
+  localStorage.setItem(SESSION_KEY, sessionId);
+};
+
 export const getSessionInfo = () => request('get', '/simulation/session');
 export const terminalCommand = (command) => request('post', '/simulation/terminal', { data: { command } });
 export const listFiles = (path) => request('get', '/simulation/files', { params: { path } });
 export const readFileContent = (path) => request('get', '/simulation/file-content', { params: { path } });
 export const getDirectory = () => request('get', '/simulation/directory');
 export const getAdminPanel = () => request('get', '/simulation/admin');
+export const sendChat = (message) => request('post', '/simulation/chat', { data: { message } });

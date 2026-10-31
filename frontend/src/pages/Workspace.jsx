@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSessionInfo, getSessionId, clearSession } from '../services/simulationApi';
-import { LayoutDashboard, Terminal, Users, FolderOpen, ShieldAlert, LogOut } from 'lucide-react';
+import { getSessionInfo, getSessionId, clearSession, attachSession } from '../services/simulationApi';
+import { LayoutDashboard, Terminal, Users, FolderOpen, ShieldAlert, LogOut, MessageSquare } from 'lucide-react';
 
 import DashboardView from '../components/DashboardView';
 import TerminalView from '../components/TerminalView';
 import DirectoryView from '../components/DirectoryView';
 import CloudDriveView from '../components/CloudDriveView';
 import AdminView from '../components/AdminView';
+import ChatView from '../components/ChatView';
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
   { id: 'terminal', label: 'Terminal', icon: Terminal },
   { id: 'directory', label: 'Directory', icon: Users },
   { id: 'cloud', label: 'Cloud Drive', icon: FolderOpen },
+  { id: 'chat', label: 'HR Assistant', icon: MessageSquare },
   { id: 'admin', label: 'Admin Panel', icon: ShieldAlert },
 ];
 
@@ -32,6 +34,10 @@ const Workspace = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const attach = params.get('attach');
+    if (attach) attachSession(attach);
+
     if (!getSessionId()) { navigate('/portal'); return; }
     getSessionInfo()
       .then((res) => setSimState(res.state))
@@ -90,6 +96,7 @@ const Workspace = () => {
           {activeTab === 'terminal' && <TerminalView simState={simState} onStateChange={setSimState} />}
           {activeTab === 'directory' && <DirectoryView />}
           {activeTab === 'cloud' && <CloudDriveView />}
+	  {activeTab === 'chat' && <ChatView />}
           {activeTab === 'admin' && <AdminView key={simState?.privilege || 'none'} />}
         </main>
       </div>

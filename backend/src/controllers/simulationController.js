@@ -1,21 +1,16 @@
 const { v4: uuidv4 } = require('uuid');
 const { createInitialState } = require('../simulation-engine/worldState');
-const { executeCommand } = require('../simulation-engine/terminalEngine');
 const fsUtils = require('../simulation-engine/filesystem');
 const { recordEvent } = require('../event-recorder/recorder');
+const simulationService = require('../services/simulationService');
 
 function publicState(state) {
   return { currentUser: state.currentUser, privilege: state.privilege, cwd: state.cwd };
 }
 
-function persistState(db, sessionId, state) {
-  db.prepare('UPDATE simulation_state SET state_json = ?, updated_at = CURRENT_TIMESTAMP WHERE session_id = ?')
-    .run(JSON.stringify(state), sessionId);
-  db.prepare('UPDATE sessions SET last_activity_at = CURRENT_TIMESTAMP WHERE id = ?').run(sessionId);
-}
-
 function createSession(req, res) {
   const db = req.app.get('db');
+  const io = req.app.get('io');
   const sessionId = uuidv4();
   const visitorId = (req.body && req.body.visitorId) || `anon-${uuidv4().slice(0, 8)}`;
   const portalLogin = req.body && req.body.portalLogin;
@@ -35,7 +30,7 @@ function createSession(req, res) {
       severity: 'info',
       source: 'session-manager',
       metadata: { submittedUser: portalLogin.username, passwordProvided: !!portalLogin.password },
-    });
+    }, state, io);
   }
 
   res.status(201).json({ sessionId, routingStage: 'observe' });
@@ -59,19 +54,36 @@ function getSessionInfo(req, res) {
   });
 }
 
-function terminal(req, res) {
-  const { session, state } = req.simContext;
-  const db = req.app.get('db');
-  const { command } = req.body || {};
-  if (typeof command !== 'string') return res.status(400).json({ message: 'command (string) required' });
+async function terminal(req, res) {
+  try {
+    const { session, state } = req.simContext;
+    const db = req.app.get('db');
+    const io = req.app.get('io');
+    const { command } = req.body || {};
+    if (typeof command !== 'string') return res.status(400).json({ message: 'command (string) required' });
 
-  const result = executeCommand(state, command);
-  persistState(db, session.id, state);
-  for (const ev of result.events) {
-    recordEvent(db, session.id, { ...ev, endpoint: '/api/simulation/terminal' });
+    const out = await simulationService.processTerminalCommand(db, io, session, state, command);
+    res.json({ ...out, state: publicState(state) });
+  } catch (err) {
+    console.error('[Simulation] Terminal error:', err.message);
+    res.status(500).json({ message: 'Terminal processing failed' });
   }
+}
 
-  res.json({ output: result.output, events: result.events.map((e) => e.eventType), state: publicState(state) });
+async function chat(req, res) {
+  try {
+    const { session, state } = req.simContext;
+    const db = req.app.get('db');
+    const io = req.app.get('io');
+    const { message } = req.body || {};
+    if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ message: 'message (string) required' });
+
+    const out = await simulationService.processChatMessage(db, io, session, state, message);
+    res.json(out);
+  } catch (err) {
+    console.error('[Simulation] Chat error:', err.message);
+    res.status(500).json({ message: 'Chat processing failed' });
+  }
 }
 
 function listFiles(req, res) {
@@ -86,6 +98,7 @@ function listFiles(req, res) {
 function fileContent(req, res) {
   const { session, state } = req.simContext;
   const db = req.app.get('db');
+  const io = req.app.get('io');
   const requested = req.query.path;
   if (!requested) return res.status(400).json({ message: 'path query parameter required' });
 
@@ -105,7 +118,7 @@ function fileContent(req, res) {
       severity: 'high', source: 'simulation-engine',
       endpoint: '/api/simulation/file-content',
       metadata: { path: target, decoyType: result.decoy.type },
-    });
+    }, state, io);
   }
   recordEvent(db, session.id, {
     eventType: 'file_read', action: `open ${requested}`,
@@ -113,9 +126,9 @@ function fileContent(req, res) {
     severity: result.sensitive ? 'medium' : 'info', source: 'simulation-engine',
     endpoint: '/api/simulation/file-content',
     metadata: { path: target, sensitive: result.sensitive },
-  });
+  }, state, io);
 
-  persistState(db, session.id, state);
+  simulationService.persistState(db, session.id, state);
   res.json({ path: target, name: target.split('/').pop(), content: result.content });
 }
 
@@ -151,4 +164,4 @@ function adminPanel(req, res) {
   });
 }
 
-module.exports = { createSession, getSessionInfo, terminal, listFiles, fileContent, directory, adminPanel };
+module.exports = { createSession, getSessionInfo, terminal, chat, listFiles, fileContent, directory, adminPanel };

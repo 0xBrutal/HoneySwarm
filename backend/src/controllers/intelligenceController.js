@@ -12,7 +12,13 @@ function getSessionIntelligence(req, res) {
 
   const mitreMap = {};
   for (const ev of events) {
-    const techniques = mapEventToMitre({ ...ev, metadata: JSON.parse(ev.metadata || '{}') });
+    // FIX: Normalize the SQLite row (snake_case) into the shape mapEventToMitre expects (camelCase)
+    const techniques = mapEventToMitre({
+      id: ev.id,
+      eventType: ev.event_type,
+      action: ev.action || '',
+      metadata: JSON.parse(ev.metadata || '{}'),
+    });
     for (const t of techniques) {
       if (!mitreMap[t.id]) {
         mitreMap[t.id] = { ...t, evidence: [], confidence: 0.9 };
