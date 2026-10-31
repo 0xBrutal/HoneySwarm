@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSessionInfo, getSessionId, clearSession } from '../services/simulationApi';
+import { getSessionInfo, getSessionId, clearSession, attachSession } from '../services/simulationApi';
 import { LayoutDashboard, Terminal, Users, FolderOpen, ShieldAlert, LogOut, MessageSquare } from 'lucide-react';
 
 import DashboardView from '../components/DashboardView';
@@ -34,6 +34,10 @@ const Workspace = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const attach = params.get('attach');
+    if (attach) attachSession(attach);
+
     if (!getSessionId()) { navigate('/portal'); return; }
     getSessionInfo()
       .then((res) => setSimState(res.state))

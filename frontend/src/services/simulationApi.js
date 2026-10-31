@@ -51,6 +51,10 @@ export const createSession = async (portalLogin) => {
   return res;
 };
 
+export function attachSession(sessionId) {
+  localStorage.setItem(SESSION_KEY, sessionId);
+};
+
 export const getSessionInfo = () => request('get', '/simulation/session');
 export const terminalCommand = (command) => request('post', '/simulation/terminal', { data: { command } });
 export const listFiles = (path) => request('get', '/simulation/files', { params: { path } });

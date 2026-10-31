@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const simulationRoutes = require('./src/routes/simulationRoutes');
 const intelligenceRoutes = require('./src/routes/intelligenceRoutes');
 const aiRoutes = require('./src/routes/aiRoutes');
+const defenderRoutes = require('./src/routes/defenderRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/defender', defenderRoutes);
 
 // Socket.IO connection
 io.on('connection', (socket) => {

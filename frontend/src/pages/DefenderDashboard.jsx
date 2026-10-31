@@ -5,6 +5,7 @@ import { fetchSessions, fetchSessionIntelligence, fetchProviderStatus } from '..
 import { useSocket } from '../hooks/useSocket';
 import EventTimeline from '../components/soc/EventTimeline';
 import MitrePanel from '../components/soc/MitrePanel';
+import ScenarioPanel from '../components/soc/ScenarioPanel';
 import { Activity, AlertOctagon, Users, Cpu } from 'lucide-react';
 
 const DefenderDashboard = () => {
@@ -15,6 +16,7 @@ const DefenderDashboard = () => {
   const [selectedSession, setSelectedSession] = useState(null);
   const [sessionDetails, setSessionDetails] = useState(null);
   const [aiStatus, setAiStatus] = useState(null);
+  const [scenarioProgress, setScenarioProgress] = useState(null);
 
   // Load all sessions
   const loadSessions = useCallback(async () => {
@@ -70,7 +72,7 @@ const DefenderDashboard = () => {
     }
   }, [selectedSession]);
 
-  useSocket(handleNewEvent, handleSessionUpdated);
+  useSocket(handleNewEvent, handleSessionUpdated, setScenarioProgress);
 
   const handleLogout = () => { logout(); navigate('/defender/login'); };
 
@@ -107,6 +109,7 @@ const DefenderDashboard = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar: Session List */}
         <aside className="w-80 bg-gray-900 border-r border-gray-800 flex flex-col">
+          <ScenarioPanel socketStatus={scenarioProgress} /> {/* <-- ADD */}
           <div className="p-4 border-b border-gray-800">
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Active Sessions</h2>
           </div>
